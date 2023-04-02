@@ -37,34 +37,54 @@ TOTAL = SUM * ((1 + p) ** (SET_PERIOD / FIXED_PERIOD))
 
 USAGE = """USAGE: {script} initial_sum percent fixed_period set_period
 
-\tCalculate deposit yield. See script source for more details.
+Calculate deposit yield. See script source for more details.
+All time periods shell be set in days.
+If initial_sum is unknown, enter 0 to calculate percentage.
+All output data are provided in gross, exept 1-year percent yield.
 """
 USAGE = USAGE.strip()
 
+MONTH = 30
+YEAR = 365
+FIVE_YEAR = 1820
+TEN_YEAR = 3650
 
 def deposit(initial_sum, percent, fixed_period, set_period):
     """Calculate deposit yield."""
-    per = percent / 100
-    growth = (1 + per) ** (set_period / fixed_period)
-    return initial_sum * growth
+
+    per = 1 + percent / 100
+    percents = (
+        per ** (set_period / fixed_period),
+        per ** (MONTH / fixed_period),
+        per ** (YEAR / fixed_period),
+        per ** (FIVE_YEAR / fixed_period),
+        per ** (TEN_YEAR / fixed_period),
+    )
+    result = tuple(map(lambda x: x * initial_sum, percents)) if initial_sum else percents
+
+    return result, percents[2] - 1  # year_per
 
 
-def main(args):
+def main(args: list):
     """Gets called when run as a script."""
+
     if len(args) != 4 + 1:
-        exit(USAGE.format(script=args[0]))
+       exit(USAGE.format(script=args[0]))
 
     args = args[1:]
+
     initial_sum, percent, fixed_period, set_period = map(float, args)
 
-    # same as
-    # initial_sum = float(args[0])
-    # percent = float(args[1])
-    # ...
-
-    res = deposit(initial_sum, percent, fixed_period, set_period)
-    print(res)
-
+    res, year_per = deposit(initial_sum, percent, fixed_period, set_period)
+    var_names = ['set period %s', 'one month %s', 'one year %s', 'five year %s', 'ten year %s']
+    def format_output(pair):
+        name, x = pair
+        name %= 'yield' if initial_sum else '%'
+        x *= 1 if initial_sum else 100
+        return '%s = %.2f' % (name, x)
+    for line in map(format_output, zip(var_names, res)):
+        print(line)
+    print('one year % net = ', round(year_per * 100, 2))
 
 if __name__ == '__main__':
     import sys
