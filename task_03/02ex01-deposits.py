@@ -46,8 +46,8 @@ USAGE = USAGE.strip()
 
 MONTH = 30
 YEAR = 365
-FIVE_YEAR = 1820
-TEN_YEAR = 3650
+FIVE_YEAR = 1826
+TEN_YEAR = 3652
 
 def deposit(initial_sum, percent, fixed_period, set_period):
     """Calculate deposit yield."""
