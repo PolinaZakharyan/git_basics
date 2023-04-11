@@ -1,15 +1,23 @@
-# union
-# intersection
-# difference
-# symmetric_difference
-# issubset
-# issuperset
-# isdisjoint
+"""
+Set operations on dictionaries
+"""
 
 def union(*args: dict) -> dict:
+    """N-ary dictionary union (set or)
+
+    Repetitive key: last value choosen
+    Commutativity: keys only
+    Associativity: full
+    """
     return { k: v for d in args for k, v in d.items() }
 
 def intersection(*args: dict) -> dict:
+    """N-ary dictionary intersection (set and)
+
+    Repetitive key: last value choosen
+    Commutativity: keys only
+    Associativity: full
+    """
     if 0 == len(args):
         return {}
     keys = set(args[0].keys())
@@ -18,15 +26,28 @@ def intersection(*args: dict) -> dict:
     return {k: args[-1][k] for k in keys}
 
 def difference(*args: dict) -> dict:
+    """N-ary dictionary difference
+
+    Commutativity: no
+    Associativity: full
+    """
     if 0 == len(args):
         return {}
     exclude = { k for d in args[1:] for k in d.keys() }
     return { k: v for k, v in args[0].items() if k not in exclude }
 
 def symmetric_difference(*args: dict) -> dict:
+    """N-ary dictionary symmetric difference (set xor)
+
+    Commutativity: full
+    Associativity: full
+    """
     if 0 == len(args):
         return {}
+
+    # unique object to mark the values to delete
     class ToExclude: pass
+
     alldata = {}
     for d in args:
         for k, v in d.items():
@@ -34,16 +55,47 @@ def symmetric_difference(*args: dict) -> dict:
 
     return { k: v for k, v in alldata.items() if v != ToExclude }
 
-def print_test(*args: dict):
 
-    print("test dicts: ", args)
-    print("  intersection:         ", intersection(*args))
-    print("  union:                ", union(*args))
-    print("  difference:           ", difference(*args))
-    print("  symmetric_difference: ", symmetric_difference(*args))
+def isequivalent(lhs: dict, rhs: dict) -> bool:
+    """Binary dictionary relation: equality by keys
 
-if __name__ == "__main__":
-    a = {'a':  1, 'b': 2}
-    b = {'a':  2, 'c': 3, 'd': 3}
-    c = {'a': 42, 'c': 4, 'e': 5}
-    print_test(a,b,c)
+    Symmetric: yes
+    Transitive: yes
+    """
+    return lhs.keys() == rhs.keys()
+
+def issubset(lhs: dict, rhs: dict) -> bool:
+    """Binary dictionary relation: subset by keys
+
+    Symmetric: no
+    Transitive: yes
+    """
+    for k in lhs:
+        if k not in rhs:
+            return False
+    return True
+
+def issuperset(lhs: dict, rhs: dict) -> bool:
+    """Binary dictionary relation: superset by keys
+
+    Symmetric: no
+    Transitive: yes
+    """
+    return issubset(rhs, lhs)
+
+def is_proper_subset(lhs: dict, rhs: dict) -> bool:
+    """Binary dictionary relation: proper subset by keys
+
+    Symmetric: no
+    Transitive: yes
+    """
+    return not isequivalent(lhs, rhs) and issubset(lhs, rhs)
+
+def is_proper_superset(lhs: dict, rhs: dict) -> bool:
+    """Binary dictionary relation: proper superset by keys
+
+    Symmetric: no
+    Transitive: yes
+    """
+    return is_proper_subset(rhs, lhs)
+
