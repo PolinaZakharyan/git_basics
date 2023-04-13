@@ -1,6 +1,15 @@
 #! /usr/bin/env python3
 
+from time import time
 from dict_set import *
+
+def timed(func):
+    def wrapper(*args, **kwargs):
+        t = time()
+        result = func(*args, **kwargs)
+        t = time() - t
+        return result, t
+    return wrapper
 
 def demo_operations(*args: dict):
 
@@ -63,6 +72,14 @@ def test_04(A: dict, B: dict):
     print(msg % "passed")
 
 
+def test_timing(operation):
+    name = operation.__name__
+
+    A = {k: 0 for k in range(0,10000)}
+    B = {k: 0 for k in range(5000,10000)}
+    C = {k: 0 for k in range(5000,15000)}
+    _, t = timed(operation)(A, B, C)
+    print(f"{name} test performance: {round(t, 3)} sec")
 
 
 if __name__ == "__main__":
@@ -92,3 +109,8 @@ if __name__ == "__main__":
     test_04(a,b)
     test_04(a,c)
     test_04(b,c)
+
+    test_timing(union)
+    test_timing(intersection)
+    test_timing(difference)
+    test_timing(symmetric_difference)
