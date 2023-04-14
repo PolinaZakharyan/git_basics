@@ -13,20 +13,26 @@ def timed(func):
 
 def demo_operations(*args: dict):
 
-    print("demo_operations, test dicts:\n", args)
+    print("Operations demo, test dicts:\n", args)
     print("  intersection:         ", intersection(*args))
     print("  union:                ", union(*args))
     print("  difference:           ", difference(*args))
     print("  symmetric_difference: ", symmetric_difference(*args))
 
 def demo_relation(l, r):
-    print("demo_relation, test dicts:\n", l, r)
+    print("Relations demo, test dicts:\n", l, r)
     print("  isequivalent:       ", isequivalent(l, r))
-    print("  issubset:           ", issubset(l, r))
+    print("  issubsesortt:           ", issubset(l, r))
     print("  issuperset:         ", issuperset(l, r))
     print("  is_proper_subset:   ", is_proper_subset(l, r))
     print("  is_proper_superset: ", is_proper_superset(l, r))
 
+def demo_sort(dct: dict):
+    print("Sort demo, test dict:    ", dct)
+    print("  sorted by key asc:     ", sorted_dict(dct))
+    print("  sorted by val asc:     ", sorted_dict(dct, by_val=True))
+    print("  sorted by key desc:    ", sorted_dict(dct, reverse=True))
+    print("  sorted by val desc:    ", sorted_dict(dct, by_val=True, reverse=True))
 
 def test_01(A: dict, B: dict) -> bool:
     """
@@ -82,10 +88,25 @@ def test_timing(operation):
     print(f"{name} test performance: {round(t, 3)} sec")
 
 
+def test_index(origin: dict):
+    msg = 'Test index failed'
+    idx = index(origin)
+    for key, value in origin.items():
+        assert value in idx, msg
+        assert key in idx[value], msg
+    for record, origin_keys in idx.items():
+        for key in origin_keys:
+            assert key in origin, msg
+            assert origin[key] == record, msg
+    print('Test index passed')
+
+
+
 if __name__ == "__main__":
     a = {'a':  1, 'b': 2}
     b = {'a':  2, 'b': 3, 'c': 3}
     c = {'a': 42, 'c': 4, 'd': 5}
+    d = {'zolo': 100, 'toto': 90, 'lolo': 70, 'koko': 30, 'tupi': 30}
 
     print("Demo:")
     demo_operations(a,b,c)
@@ -93,6 +114,7 @@ if __name__ == "__main__":
     demo_relation(a,b)
     demo_relation(b,a)
 
+    demo_sort(d)
     print("Tests:")
     test_01(a,b)
     test_01(a,c)
@@ -114,3 +136,5 @@ if __name__ == "__main__":
     test_timing(intersection)
     test_timing(difference)
     test_timing(symmetric_difference)
+
+    test_index(c)

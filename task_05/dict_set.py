@@ -99,3 +99,22 @@ def is_proper_superset(lhs: dict, rhs: dict) -> bool:
     """
     return is_proper_subset(rhs, lhs)
 
+def index(origin: dict) -> dict:
+    """Create value index
+
+    Create inverse dictionary { value: set of keys }
+    """
+    idx = {}
+    for k, v in origin.items():
+        idx[v] = idx.get(v, set()) | {k}
+    return idx
+
+def sorted_dict(origin: dict, by_val=False, reverse=False) -> dict:
+    """Sort dictionary
+
+    Options:
+    by_val: sort by value, default = False
+    reverse: sort in descending order, default = False
+    """
+    sort_key = 1 if by_val else 0
+    return { k: v for k, v in sorted(origin.items(), key = lambda item: item[sort_key], reverse=reverse) }
