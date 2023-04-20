@@ -1,43 +1,22 @@
 import cmath
 import functools
 import math
-
+from itertools import zip_longest
 
 class Vector:
-    __slots__ = ('_x', '__y')
+    __slots__ = ('_x')
 
-    def __init__(self, x, y):
-        self._x = x
-        self.__y = y
+    def __init__(self, *args):
+        if len(args) == 0 and hasattr(args[0], '__iter__'):
+            args = args[0]
+        self._x = tuple(args)
 
-    @property
-    def x(self):
-        return self._x  # this attr is pseudoprivate
-
-    @property
-    def y(self):
-        return self.__y  # this one is private (mangled)
 
     @property
     @functools.lru_cache(maxsize=1)
-    def length(self):
-        # Directly -- not the most efficient way
-        # return (self.x ** 2 + self.y ** 2) ** 0.5
+    def magnitude(self):
+        return sum(map(lambda x: x ** 2, self._x)) ** 0.5
 
-        #print('this is lazy, doing computations...')
-        return abs(self.x + 1j * self.y)
-
-
-##    @property
-##    def length(self):
-##        if not hasattr(self, '_length'):
-##            print('computing')
-##            self._length = abs(self.x + 1j * self.y)
-##        return self._length
-
-# @length.setter
-# def length(self, val):
-#     print(f'Attemting to set length to {val}')
 
     @classmethod
     def from_polar(cls, length, angle, *, isdeg=True):
@@ -58,33 +37,28 @@ class Vector:
 
         x = length * math.cos(angle)
         y = length * math.sin(angle)
-        return cls(x=x, y=y)
+        return cls(x, y)
 
     @staticmethod
-    def angle_between(veca, vecb, *, isdeg=True):
-        a, b = [vec.x + 1j * vec.y for vec in [veca, vecb]]
-        anga, angb = [cmath.phase(el) for el in [a, b]]
-        angle = angb - anga
+    def angle_between(a: 'Vector', b: 'Vector', isdeg=True):
+        angle = math.acos(Vector.dot_product(a, b) / (a.magnitude * b.magnitude))
+
         if isdeg:
             angle = math.degrees(angle)
         return angle
 
     def __repr__(self):
         clsname = self.__class__.__name__
-        return f'{clsname}(x={self.x}, y={self.y})'
+        return f"{clsname}({', '.join(self._x)})"
 
     def __bool__(self):
-        return not self.x == self.y == 0
+        return bool(functools.reduce(lambda x, y: x & y, self._x, 1))
 
     def __add__(self, other):
         if not isinstance(other, type(self)):
             raise TypeError(f'operands {self} and {other} type mismatch')
 
-        # create a new vector with sum of coords
-        x = self.x + other.x
-        y = self.y + other.y
-        # same as self.__class__(x=x, y=y)
-        return type(self)(x=x, y=y)
+        return type(self)(ax + bx for ax, bx in zip_longest(self._x, other._x, fillvalue=0))
 
     def __sub__(self, other):
         return self + (other * -1)  # call mul explicitly
@@ -94,15 +68,11 @@ class Vector:
 
     def scalar_product(self, scalar):
         if not isinstance(scalar, int):
-            # and this type is not integer
-            # ==> ensure it is convertable to float
             scalar = float(scalar)
-        # now we're either dealing with int, or with float
-        return type(self)(x=scalar * self.x, y=scalar * self.y)
+        return type(self)(scalar * x for x in self._x)
 
-
-    def dot_product(other):
-        raise NotImplementedError('not done yet, see TODO')
+    def dot_product(self, other):
+        return sum(ax * bx for ax, bx in zip(self._x, other._x))
 
     def cross_product(other):
         raise NotImplementedError('not done yet, see TODO')
@@ -128,7 +98,10 @@ class Vector:
 
     def __eq__(self, other):
         try:
-            return self.x == other.x and self.y == other.y
+            for ax, bx in zip_longest(self._x, other._x, fillvalue=0):
+                if ax != bx:
+                    return False
+            return True
         except Exception:
             return False
 
@@ -145,7 +118,7 @@ class Vector:
         # return id(self)
         # if it is not exactly unique and applicable to use
         # other object with same values during indexing
-        return hash(self.x) ^ hash(self.y)
+        return hash(self._x)
 
 
 class Point(Vector):
