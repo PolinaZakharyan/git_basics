@@ -92,24 +92,33 @@ class Vector:
     def __rmul__(self, other):
         return self.__mul__(other)
 
+    def scalar_product(self, scalar):
+        if not isinstance(scalar, int):
+            # and this type is not integer
+            # ==> ensure it is convertable to float
+            scalar = float(scalar)
+        # now we're either dealing with int, or with float
+        return type(self)(x=scalar * self.x, y=scalar * self.y)
+
+
+    def dot_product(other):
+        raise NotImplementedError('not done yet, see TODO')
+
+    def cross_product(other):
+        raise NotImplementedError('not done yet, see TODO')
+
+
     def __mul__(self, other):
         # we will implement only Vector * scalar multiplication
         # resulting in proportional scaling of its coords
 
         if not isinstance(other, type(self)):
             # if has other type
-            if not isinstance(other, int):
-                # and this type is not integer
-                # ==> ensure it is convertable to float
-                other = float(other)
-            # now we're either dealing with int, or with float
-            return type(self)(x=other * self.x, y=other * self.y)
+            return self.scalar_product(other)
+        return self.dot_product(other)
 
-        # TODO: add vector by vector mul here
-        # vector cross product and dot product
-        # Note: you may use __mul__ for dot product,
-        # and __matmul__ for cross product
-        raise NotImplementedError('not done yet, see TODO')
+    def __matmul__(self, other):
+        return self.cross_product(other)
 
     def __truediv__(self, other):
         if not other:
@@ -143,18 +152,3 @@ class Point(Vector):
     pass
 
 
-if __name__ == '__main__':
-    vec = Vector(3, 5)
-    oth = Vector(10, 20)
-
-    zero = Vector(0, 0)
-    bool(zero)  # returns False
-
-    res = vec * 3 + oth / 10
-
-    diag = Vector.from_polar(length=10, angle=45, isdeg=True)
-
-    one = Vector.from_polar(1, 45)
-    two = Vector.from_polar(10, 135)
-
-    angle = Vector.angle_between(one, two)
