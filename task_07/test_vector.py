@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 from vector import Vector
 
 
@@ -13,12 +15,22 @@ def test_bool():
     assert bool(Vector(1, 1))
     assert bool(Vector(-1, -1))
 
+def test_add():
+    vecsum = Vector(1, 1) + Vector(2, 2)
+    assert vecsum == Vector(3, 3)
+    assert (Vector(1, 1) - Vector(2, 2)) == Vector(-1, -1)
+
+def test_mul():
+    assert (Vector(1, 1) * Vector(2, 2)) == 4
+    assert (Vector(1, 1) * 0.5) == Vector(0.5, 0.5)
+
 
 
 
 if __name__ == '__main__':
     test_equality()
     test_bool()
+    test_add()
     vec = Vector(3, 5)
     oth = Vector(10, 20)
 

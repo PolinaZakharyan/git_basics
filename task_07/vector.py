@@ -7,7 +7,7 @@ class Vector:
     __slots__ = ('_x')
 
     def __init__(self, *args):
-        if len(args) == 0 and hasattr(args[0], '__iter__'):
+        if len(args) == 1 and hasattr(args[0], '__iter__'):
             args = args[0]
         self._x = tuple(args)
 
