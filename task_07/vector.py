@@ -69,6 +69,15 @@ class Vector:
     def __rmul__(self, other):
         return self.__mul__(other)
 
+    def __div__(self, other):
+        try:
+            return self.__mul__(1 / other)
+        except:
+            raise TypeError('unsupported operation')
+
+    def __rdiv__(self, other):
+        raise TypeError('unsupported operation')
+
     def scalar_product(self, scalar):
         if not isinstance(scalar, int):
             scalar = float(scalar)

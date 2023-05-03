@@ -23,6 +23,7 @@ def test_add():
 def test_mul():
     assert (Vector(1, 1) * Vector(2, 2)) == 4
     assert (Vector(1, 1) * 0.5) == Vector(0.5, 0.5)
+    assert (Vector(1, 1) / 2) == Vector(.5, .5)
 
 def test_cross():
 
@@ -38,7 +39,9 @@ if __name__ == '__main__':
     test_equality()
     test_bool()
     test_add()
+    test_mul()
     test_cross()
+
     vec = Vector(3, 5)
     oth = Vector(10, 20)
 
