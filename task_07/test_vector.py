@@ -24,6 +24,13 @@ def test_mul():
     assert (Vector(1, 1) * Vector(2, 2)) == 4
     assert (Vector(1, 1) * 0.5) == Vector(0.5, 0.5)
 
+def test_cross():
+
+    # collinear
+    a=Vector(3,-3,1)
+    b=Vector(-12,12,-4)
+    assert (a @ b) == Vector(0)
+
 
 
 
@@ -31,10 +38,9 @@ if __name__ == '__main__':
     test_equality()
     test_bool()
     test_add()
+    test_cross()
     vec = Vector(3, 5)
     oth = Vector(10, 20)
-
-      # returns False
 
     res = vec * 3 + oth / 10
 

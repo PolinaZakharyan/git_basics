@@ -1,9 +1,12 @@
-import cmath
 import functools
 import math
 from itertools import zip_longest
 
 class Vector:
+    """
+    Vector class with dynamic dimensionality.
+    In non-uniform binary operations x[n] = 0 for all n >= len(x).
+    """
     __slots__ = ('_x')
 
     def __init__(self, *args):
@@ -74,13 +77,22 @@ class Vector:
     def dot_product(self, other):
         return sum(ax * bx for ax, bx in zip(self._x, other._x))
 
-    def cross_product(other):
-        raise NotImplementedError('not done yet, see TODO')
+    def cross_product(self, other):
+
+        if len(self._x) > 3 or len(other._x) > 3:
+            raise NotImplementedError('cross product for dim > 3 is not defined')
+
+        a = list(self._x) + [0] * (3 - len(self._x))
+        b = list(other._x) + [0] * (3 - len(other._x))
+
+        return Vector(
+            a[1]*b[2] - a[2]*b[1],
+            a[2]*b[0] - a[0]*b[2],
+            a[0]*b[1] - a[1]*b[0]
+        )
 
 
     def __mul__(self, other):
-        # we will implement only Vector * scalar multiplication
-        # resulting in proportional scaling of its coords
 
         if not isinstance(other, type(self)):
             # if has other type
