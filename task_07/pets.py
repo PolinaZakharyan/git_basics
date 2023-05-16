@@ -32,7 +32,7 @@ class Animal(Hashable):
         return f"{self}, {self.behavior.name}, make sounds: {', '.join(self.sounds)}"
 
     def hi(self):
-        print(self.sounds[randrange(len(self.sounds))])
+        return self.sounds[randrange(len(self.sounds))]
 
 
 @dataclass
@@ -46,8 +46,11 @@ class Pet(Animal):
         self.sounds.append(word)
 
 class OwnedPets(set):
-    def __init__(self, it: Iterable[Pet] = []) -> None:
-        super().__init__(it)
+    def __init__(self, items: Iterable[Pet] = []) -> None:
+        for item in items:
+            if not isinstance(item, Pet):
+                raise TypeError("OwnedPets invalid args")
+        super().__init__(items)
 
     _wrapped_methods = {
         'copy',
@@ -117,16 +120,3 @@ class Wolf(Animal):
     behavior = FeedingBehavior.Carnivorous
     sounds =["Woooo!"]
 
-################
-# MANUAL TESTS #
-################
-
-x = Cat(13, 'Lolo')
-y = Cat(14, 'Toto')
-z = Wolf(42)
-a = Dog(15, 'Tobi')
-b = Bird(0.2, 'Kesha')
-y.teach('mrrr')
-
-pets = OwnedPets([x,y,a,b])
-pers = PetOwner('Bob', pets)
