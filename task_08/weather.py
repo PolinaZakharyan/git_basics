@@ -1,18 +1,38 @@
 #!/usr/bin/env python3
 
 import json
+import argparse
+import os
+
+def load_wmo_codes():
+    import csv
+    with open(os.path.join(os.path.dirname(__file__), 'wmo_codes.csv')) as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='"')
+        return [row[1].strip()[1:-1] for row in reader]
+
+WMO_CODES = load_wmo_codes()
+
+def make_argparser():
+    parser = argparse.ArgumentParser(
+        prog='weather',
+        description='request weather for the given city or the coordinates',
+        epilog='Text at the bottom of help'
+    )
+
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    group.add_argument('city', nargs='?', type=str,
+        help='format: "city" or "country/city"')
+
+    group.add_argument('--coords', '-c', nargs=2, type=float,
+        metavar="N", help="latitude longitude")
+
+    return parser
 
 from urllib import request
-# TODO: try using Requests package
-#       (https://requests.readthedocs.io)
-
 
 def make_request(url):
     """Issue GET request to URL returning text."""
-    # TODO: try parsing response headers, content-type
-    # to get encoding from there
-    # (content-type: text/html; charset=UTF-8)
-    # TODO: try parsing it with regexp
     respfile = request.urlopen(url)
 
     hdr = respfile.headers
@@ -49,15 +69,21 @@ class RequestData:
 
 class City(RequestData):
     URL_TEMPLATE = (
-        'https://geocoding-api.open-meteo.com/v1/search?name={name}')
+        'https://geocoding-api.open-meteo.com/v1/search?name={name}&country={country}')
 
     def __init__(self, name=None, latitude=None, longitude=None):
+
         if name is not None:
             name = name.title()
+
+        country = None
+        if '/' in name:
+            country, name = name.split('/')
+
+        self.country = country
         self.name = name
         self.latitude = latitude
         self.longitude = longitude
-        #self.country = country
 
     def request(self):
         cities = self.find_cities()
@@ -65,45 +91,15 @@ class City(RequestData):
         if self.name not in cities:
             raise CityNotFoundError(self.name)
 
-        # code below executes only if we didn't raise an exception
         for k, v in cities[self.name].items():
-            # same as self.__dict__.update(res.get(self.name, {}))
-            # but more portable
             setattr(self, k, v)
 
-        # Set instance attributes if exact match found
-        # if self.name in cities:
-        #     item = cities[self.name]
-        #     self.latitude = cities['latitude']
-        #     self.longitude = cities['longitude']
-        #     self.country = cities['country']
-
     def find_cities(self):
-        data = super().request(name=self.name)
+        data = super().request(name=self.name, country=self.country)
         data = data.get('results', {})
-        # transform into data structure of the form:
-        # {'Kyiv': {
-        #   'latitude': 50.45466,
-        #   'longitude': 30.5238,
-        #   'country': 'Ukraine'
-        #   },
-        #  'Kyivske': { ... },
-        # }
 
-        # extract = ['latitude', 'longitude', 'country']
-        # res = {entry['name']: {k: entry[k] for k in extract}
-        #        for entry in data}
-
-        # Transform data structure
-        res = {}
-        for entry in data:
-            name = entry['name']
-            res[name] = {
-                'latitude': entry['latitude'],
-                'longitude': entry['longitude'],
-                'country': entry['country']
-            }
-
+        extract = ['latitude', 'longitude', 'country']
+        res = {entry['name']: {k: entry[k] for k in extract} for entry in data}
         return res
 
 
@@ -112,14 +108,22 @@ class Weather(RequestData):
                     'latitude={lat}&longitude={lon}&current_weather=true')
 
     def __init__(self, city=None, latitude=None, longitude=None):
-        # TODO: try getting latitute and longitude from city name
-        #       if not provided directly
-        # i.e. Weather(city='kyiv') or Weather(latitude=30, longitude=40)
-        if (city is None) and (latitude is None or longitude is None):
-            msg = ('Either city or a pair of latitude, '
+
+        if isinstance(city, str):
+            city = City(city)
+
+        if isinstance(city, City):
+            if (city.latitude is None or city.longitude is None):
+                city.request()
+            latitude = city.latitude
+            longitude = city.longitude
+
+        if latitude is None or longitude is None:
+            msg = ('Either a valid city or a pair of latitude, '
                    'longitude must be provided')
             raise WeatherError(msg)
-        ...
+
+        self.requested_object = city.name if city else f"{latitude}, {longitude}"
         self.lat = latitude
         self.lon = longitude
         self.data = None
@@ -139,20 +143,55 @@ class Weather(RequestData):
             self.request()
         return self.data['current_weather']['temperature']
 
+    @property
+    def weather(self):
+        """Retreive weather description from OpenMeteo response."""
+        if self.data is None:
+            self.request()
+        code = self.data['current_weather']['weathercode']
+        if code >= len(WMO_CODES):
+            return "unknown"
+        return WMO_CODES[code]
 
-# TODO: add argument parsing
-# TODO: try setting city as: Ukraine/Kyiv or simply Kyiv
+    @property
+    def windspeed(self):
+        """Retreive windspeed from OpenMeteo response."""
+        if self.data is None:
+            self.request()
+        return self.data['current_weather']['windspeed']
+
+    @property
+    def winddirection(self):
+        """Retreive winddirection from OpenMeteo response."""
+        if self.data is None:
+            self.request()
+        return self.data['current_weather']['winddirection']
+
+    @property
+    def time(self):
+        """Retreive time from OpenMeteo response."""
+        if self.data is None:
+            self.request()
+        return self.data['current_weather']['time']
 
 if __name__ == '__main__':
-    from pprint import pprint
 
-    # very simple args get
-    import sys
-    name = sys.argv[1] if len(sys.argv) == 2 else 'kyiv'
+    from sys import argv
+    parser = make_argparser()
 
-    city = City(name)
-    city.request()
+    ns = parser.parse_args(argv[1:])
 
-    wth = Weather(latitude=city.latitude, longitude=city.longitude)
+    city, lat, long = ns.city, None, None
+    if ns.coords:
+        lat, long = ns.coords[0], ns.coords[1]
 
-    print(f'Temperature in {city.name} is {wth.temperature}')
+    wth = Weather(city, lat, long)
+
+    resp = f'Weather in {wth.requested_object}:\n'
+    resp += f' time:          {wth.time}\n'
+    resp += f' temperature:   {wth.temperature}\n'
+    resp += f' windspeed:     {wth.windspeed}\n'
+    resp += f' winddirection: {wth.winddirection}\n'
+    resp += f' weather:       {wth.weather}\n'
+
+    print(resp)
