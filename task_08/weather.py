@@ -57,13 +57,25 @@ def make_argparser():
 
     return parser
 
+class WeatherAPIError(Exception):
+    pass
+
+
+class CityNotFoundError(WeatherAPIError, LookupError):
+    """Raised when city not found."""
+    pass
+
+
 from urllib import request
 
 @exceptlogger()
 def make_request(url):
     """Issue GET request to URL returning text."""
     LOGGER.info('make_request call with url = %s', url)
-    respfile = request.urlopen(url)
+    try:
+        respfile = request.urlopen(url)
+    except Exception as e:
+        raise WeatherAPIError(e.args)
 
     hdr = respfile.headers
     ct = hdr.get('content-type', '; charset=UTF-8')
@@ -73,15 +85,6 @@ def make_request(url):
     bindata = respfile.read()
     data = bindata.decode(encoding=enc)
     return data
-
-
-class WeatherError(Exception):
-    pass
-
-
-class CityNotFoundError(WeatherError, LookupError):
-    """Raised when city not found."""
-    pass
 
 
 class RequestData:
@@ -94,7 +97,11 @@ class RequestData:
         url = self.URL_TEMPLATE.format(**kwargs)
 
         text = make_request(url=url)
-        data = json.loads(text)
+
+        try:
+            data = json.loads(text)
+        except Exception as e:
+            raise WeatherAPIError(e.args)
         return data
 
 
@@ -161,7 +168,7 @@ class Weather(RequestData):
         if latitude is None or longitude is None:
             msg = ('Either a valid city or a pair of latitude, '
                    'longitude must be provided')
-            raise WeatherError(msg)
+            raise WeatherAPIError(msg)
 
         requested_object = city.name if city else f"{latitude}, {longitude}"
 
