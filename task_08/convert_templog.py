@@ -22,7 +22,7 @@ def to_binary(input: str) -> bytearray:
     return bytearray(array('f', map(float, input.strip().split('\n'))))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     from sys import argv
     ns = ARGPARSER.parse_args(argv[1:])
 

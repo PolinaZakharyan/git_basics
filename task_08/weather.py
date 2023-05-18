@@ -75,7 +75,7 @@ def make_request(url):
     LOGGER.info('make_request call with url = %s', url)
     try:
         respfile = request.urlopen(url)
-    except Exception as e:
+    except Exception as e: # pragma: no cover
         raise WeatherAPIError(e.args)
 
     hdr = respfile.headers
@@ -101,7 +101,7 @@ class RequestData:
 
         try:
             data = json.loads(text)
-        except Exception as e:
+        except Exception as e: # pragma: no cover
             raise WeatherAPIError(e.args)
         return data
 
@@ -239,15 +239,15 @@ class Weather(RequestData):
     @property
     def dump(self) -> str:
         self.request()
-        resp = f'Weather in {wth.requested_object}:\n'
-        resp += f' time:          {wth.time}\n'
-        resp += f' temperature:   {wth.temperature}\n'
-        resp += f' windspeed:     {wth.windspeed}\n'
-        resp += f' winddirection: {wth.winddirection}\n'
-        resp += f' weather:       {wth.weather}\n'
+        resp = f'Weather in {self.requested_object}:\n'
+        resp += f' time:          {self.time}\n'
+        resp += f' temperature:   {self.temperature}\n'
+        resp += f' windspeed:     {self.windspeed}\n'
+        resp += f' winddirection: {self.winddirection}\n'
+        resp += f' weather:       {self.weather}\n'
         return resp
 
-if __name__ == '__main__':
+if __name__ == '__main__': # pragma: no cover
 
     from sys import argv
     parser = make_argparser()

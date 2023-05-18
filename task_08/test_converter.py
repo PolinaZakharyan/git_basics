@@ -8,6 +8,3 @@ def test_conversion():
     assert BIN == to_binary(to_text(BIN))
 
     print("test_conversion passed")
-
-if __name__ == '__main__':
-    test_conversion()
