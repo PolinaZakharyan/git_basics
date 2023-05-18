@@ -13,12 +13,13 @@ ARGPARSER.add_argument('--text', '-t', action='store_true',
     help='if option specified, conversion mode is text to binary, inverse otherwise')
 
 def to_text(input: bytearray) -> str:
+    """Decode compressed templog data"""
     arr = array('f')
     arr.frombytes(input)
     return ''.join(map(lambda x: str(round(x, 2)) + '\n', arr))
 
 def to_binary(input: str) -> bytearray:
-    # compress data by converting the string number representation to true number
+    """Compress templog data by converting the string numbers to true floats"""
     return bytearray(array('f', map(float, input.strip().split('\n'))))
 
 

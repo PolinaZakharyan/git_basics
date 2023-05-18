@@ -26,6 +26,7 @@ LOG_LVL = {
 
 @exceptlogger()
 def load_wmo_codes():
+    """Load weather code-to-description mapping"""
     import csv
     with open(os.path.join(os.path.dirname(__file__), 'wmo_codes.csv')) as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quotechar='"')
@@ -35,6 +36,7 @@ WMO_CODES = load_wmo_codes()
 
 @exceptlogger()
 def make_argparser():
+    """Make argparser for the application"""
     parser = argparse.ArgumentParser(
         prog='weather',
         description='request weather for the given city or the coordinates'
@@ -59,6 +61,7 @@ def make_argparser():
     return parser
 
 class WeatherAPIError(Exception):
+    """Base exception for the weather application"""
     pass
 
 
@@ -89,6 +92,8 @@ def make_request(url):
 
 
 class RequestData:
+    """Base class for objects with URL requests"""
+
     URL_TEMPLATE = ''
 
     @exceptlogger()
@@ -107,6 +112,8 @@ class RequestData:
 
 
 class City(RequestData):
+    """Location-handling object"""
+
     URL_TEMPLATE = (
         'https://geocoding-api.open-meteo.com/v1/search?name={name}&country={country}')
 
@@ -132,6 +139,8 @@ class City(RequestData):
 
     @exceptlogger()
     def request(self):
+        """Request geolocation coordinates"""
+
         cities = self.find_cities()
 
         if self.name not in cities:
@@ -142,6 +151,8 @@ class City(RequestData):
 
     @exceptlogger()
     def find_cities(self):
+        """Make URL request for cities"""
+
         data = super().request(name=self.name, country=self.country)
         data = data.get('results', {})
 
@@ -151,12 +162,19 @@ class City(RequestData):
 
 
 class Weather(RequestData):
+    """Weather info provider"""
+
     URL_TEMPLATE = ('https://api.open-meteo.com/v1/forecast?'
                     'latitude={lat}&longitude={lon}&current_weather=true')
 
     @exceptlogger()
     def __init__(self, city=None, latitude=None, longitude=None):
+        """Initialize weather for specified location.
 
+
+        City may be passed either a string or as City class instance.
+        If no city provided, coordinates will be used.
+        """
         if isinstance(city, str):
             city = City(city)
 
@@ -190,6 +208,7 @@ class Weather(RequestData):
 
     @exceptlogger()
     def request(self):
+        """Get OpenMeteo response for instance location"""
         data = super().request(lat=self.lat, lon=self.lon)
         self.data = data
 
@@ -238,6 +257,7 @@ class Weather(RequestData):
 
     @property
     def dump(self) -> str:
+        """Dump formatted weather info string"""
         self.request()
         resp = f'Weather in {self.requested_object}:\n'
         resp += f' time:          {self.time}\n'
