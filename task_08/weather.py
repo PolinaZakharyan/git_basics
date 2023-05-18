@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 from time import sleep
+from warnings import warn
 
 from exceptlogger import exceptlogger
 
@@ -273,8 +274,9 @@ if __name__ == '__main__':
     if monitor:
         if not period:
             period = DEFAULT_MONTORNG_PERIOD
-            LOGGER.warning('period option not set, using default value %d',
-                DEFAULT_MONTORNG_PERIOD)
+            msg = 'period option not set, using default value %d' % DEFAULT_MONTORNG_PERIOD
+            warn(msg)
+            LOGGER.warning(msg)
 
         while True:
             with exceptlogger('monitoring loop'):
