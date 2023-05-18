@@ -1,3 +1,7 @@
+import sys
+from os.path import dirname
+
+sys.path.append(dirname(dirname(__file__)))
 from convert_templog import *
 
 def test_conversion():
@@ -6,5 +10,3 @@ def test_conversion():
 
     assert TXT == to_text(BIN)
     assert BIN == to_binary(to_text(BIN))
-
-    print("test_conversion passed")

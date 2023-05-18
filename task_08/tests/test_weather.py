@@ -1,4 +1,8 @@
 import pytest
+import sys
+from os.path import dirname
+
+sys.path.append(dirname(dirname(__file__)))
 from weather import *
 
 TEST_CITIES = ['kyiv', 'Kryzhopil', 'Ukraine/Kyiv', 'Lol', 'Kek']
@@ -16,7 +20,6 @@ def test_init_weather_with_cityname(name):
 
     assert wth.data is not None
     assert wth.temperature is not None
-    print('test_init_weather_with_cityname passed with name = %s' % name)
 
 @pytest.mark.parametrize('name', ['111', '222', 'no-such-sity'])
 def test_error_init_weather(name):
@@ -40,7 +43,6 @@ def test_init_weather_with_cityobj():
     assert wth.data is not None
     assert wth.temperature is not None
     assert repr(wth)
-    print('test_init_weather_with_cityobj passed')
 
 def test_parser():
     assert make_argparser()
