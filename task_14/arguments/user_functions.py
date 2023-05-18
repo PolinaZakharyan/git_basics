@@ -46,3 +46,11 @@ def delete_user(id):
             break
     write_to_file(USERS_FILE_PATH, data)
 
+def edit_user(id, input):
+    data = get_data_from_file(USERS_FILE_PATH)
+    for obj in data:
+        obj: dict = obj
+        if id == obj["id"]:
+            obj.update(input)
+            break
+    write_to_file(USERS_FILE_PATH, data)

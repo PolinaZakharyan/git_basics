@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from user_functions import save_user, get_all_users, get_user_by_id, delete_user
+from user_functions import edit_user, save_user, get_all_users, get_user_by_id, delete_user
 
 
 parser = ArgumentParser()
@@ -20,3 +20,7 @@ elif int(args.operation) == 3:
     get_user_by_id(int(args.identifier))
 elif int(args.operation) == 4:
     delete_user(int(args.identifier))
+elif int(args.operation) == 5:
+    KEYS = 'first_name', 'last_name', 'email',
+    edit_user(int(args.identifier),
+        {k: v for k, v in vars(args).items() if (v is not None) and k in KEYS})
