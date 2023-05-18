@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
 import json
 import argparse
 import os
+import sys
+from time import sleep
 
 from exceptlogger import exceptlogger
+
+DEFAULT_MONTORNG_PERIOD = 10
 
 @exceptlogger()
 def load_wmo_codes():
@@ -19,17 +24,22 @@ WMO_CODES = load_wmo_codes()
 def make_argparser():
     parser = argparse.ArgumentParser(
         prog='weather',
-        description='request weather for the given city or the coordinates',
-        epilog='Text at the bottom of help'
+        description='request weather for the given city or the coordinates'
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
 
     group.add_argument('city', nargs='?', type=str,
-        help='format: "city" or "country/city"')
+        help='Location, format: "city" or "country/city"')
 
     group.add_argument('--coords', '-c', nargs=2, type=float,
-        metavar="N", help="latitude longitude")
+        metavar="N", help="Latitude and longitude")
+
+    parser.add_argument('--monitor', '-m', nargs='?', type=argparse.FileType('w'), const=sys.stdout,
+        metavar="FILE", help='Monitoring log file, default is std out')
+
+    parser.add_argument('--period', nargs='?', type=int,
+        metavar="N", help=f"Monitoring period in seconds, default is {DEFAULT_MONTORNG_PERIOD}")
 
     return parser
 
@@ -191,6 +201,17 @@ class Weather(RequestData):
                 self.request()
             return self.data['current_weather']['time']
 
+    @property
+    def dump(self) -> str:
+        self.request()
+        resp = f'Weather in {wth.requested_object}:\n'
+        resp += f' time:          {wth.time}\n'
+        resp += f' temperature:   {wth.temperature}\n'
+        resp += f' windspeed:     {wth.windspeed}\n'
+        resp += f' winddirection: {wth.winddirection}\n'
+        resp += f' weather:       {wth.weather}\n'
+        return resp
+
 if __name__ == '__main__':
 
     from sys import argv
@@ -198,17 +219,27 @@ if __name__ == '__main__':
 
     ns = parser.parse_args(argv[1:])
 
+
+    monitor, period = ns.monitor, ns.period
+    if (period is not None) and (monitor is None):
+        raise RuntimeError('--monitor option shall be provided explicitly if period is specified')
+
+
     city, lat, long = ns.city, None, None
     if ns.coords:
         lat, long = ns.coords[0], ns.coords[1]
 
     wth = Weather(city, lat, long)
+    print(ns)
+    if monitor:
+        if not period:
+            period = DEFAULT_MONTORNG_PERIOD
 
-    resp = f'Weather in {wth.requested_object}:\n'
-    resp += f' time:          {wth.time}\n'
-    resp += f' temperature:   {wth.temperature}\n'
-    resp += f' windspeed:     {wth.windspeed}\n'
-    resp += f' winddirection: {wth.winddirection}\n'
-    resp += f' weather:       {wth.weather}\n'
+        while True:
+            with exceptlogger('monitoring loop'):
+                monitor.write(str(wth.temperature) + "\n")
+                monitor.flush()
+            sleep(period)
 
-    print(resp)
+    else:
+        print(wth.dump)
