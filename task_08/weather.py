@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from datetime import datetime
+import logging
 import json
 import argparse
 import os
@@ -10,6 +10,18 @@ from time import sleep
 from exceptlogger import exceptlogger
 
 DEFAULT_MONTORNG_PERIOD = 10
+
+logging.basicConfig(filename='weather.log', filemode='a')
+LOGGER = logging.getLogger(__name__)
+
+# convert our log level to lib level
+LOG_LVL = {
+    0: 'CRITICAL',
+    1: 'ERROR',
+    2: 'WARNING',
+    3: 'INFO',
+    4: 'DEBUG'
+}
 
 @exceptlogger()
 def load_wmo_codes():
@@ -41,6 +53,8 @@ def make_argparser():
     parser.add_argument('--period', nargs='?', type=int,
         metavar="N", help=f"Monitoring period in seconds, default is {DEFAULT_MONTORNG_PERIOD}")
 
+    parser.add_argument('--verbose', '-v', action='count', default=0)
+
     return parser
 
 from urllib import request
@@ -48,6 +62,7 @@ from urllib import request
 @exceptlogger()
 def make_request(url):
     """Issue GET request to URL returning text."""
+    LOGGER.info('make_request call with url = %s', url)
     respfile = request.urlopen(url)
 
     hdr = respfile.headers
@@ -102,6 +117,11 @@ class City(RequestData):
         self.latitude = latitude
         self.longitude = longitude
 
+        LOGGER.debug('City initialized with \
+            country, name, latitude, longitude = %s',
+            str([country, name, latitude, longitude])
+        )
+
     @exceptlogger()
     def request(self):
         cities = self.find_cities()
@@ -143,10 +163,17 @@ class Weather(RequestData):
                    'longitude must be provided')
             raise WeatherError(msg)
 
-        self.requested_object = city.name if city else f"{latitude}, {longitude}"
+        requested_object = city.name if city else f"{latitude}, {longitude}"
+
+        self.requested_object = requested_object
         self.lat = latitude
         self.lon = longitude
         self.data = None
+
+        LOGGER.debug('Weather initialized with \
+            requested_object, latitude, longitude = %s',
+            str([requested_object, latitude, longitude])
+        )
 
     @exceptlogger()
     def __repr__(self):
@@ -219,6 +246,11 @@ if __name__ == '__main__':
 
     ns = parser.parse_args(argv[1:])
 
+    if __debug__:
+        logging.basicConfig(stream=sys.stdout)
+
+    LOGGER.setLevel(LOG_LVL.get(ns.verbose, 'DEBUG'))
+    LOGGER.debug('weather call with args = %s', str(ns))
 
     monitor, period = ns.monitor, ns.period
     if (period is not None) and (monitor is None):
@@ -230,10 +262,12 @@ if __name__ == '__main__':
         lat, long = ns.coords[0], ns.coords[1]
 
     wth = Weather(city, lat, long)
-    print(ns)
+
     if monitor:
         if not period:
             period = DEFAULT_MONTORNG_PERIOD
+            LOGGER.warning('period option not set, using default value %d',
+                DEFAULT_MONTORNG_PERIOD)
 
         while True:
             with exceptlogger('monitoring loop'):
