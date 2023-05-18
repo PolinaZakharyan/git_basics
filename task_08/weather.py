@@ -4,6 +4,9 @@ import json
 import argparse
 import os
 
+from exceptlogger import exceptlogger
+
+@exceptlogger()
 def load_wmo_codes():
     import csv
     with open(os.path.join(os.path.dirname(__file__), 'wmo_codes.csv')) as csvfile:
@@ -12,6 +15,7 @@ def load_wmo_codes():
 
 WMO_CODES = load_wmo_codes()
 
+@exceptlogger()
 def make_argparser():
     parser = argparse.ArgumentParser(
         prog='weather',
@@ -31,6 +35,7 @@ def make_argparser():
 
 from urllib import request
 
+@exceptlogger()
 def make_request(url):
     """Issue GET request to URL returning text."""
     respfile = request.urlopen(url)
@@ -57,6 +62,7 @@ class CityNotFoundError(WeatherError, LookupError):
 class RequestData:
     URL_TEMPLATE = ''
 
+    @exceptlogger()
     def request(self, **kwargs):
         """Make request to remote URL parsing json result."""
         # Create url for further GET request to OpenMeteo
@@ -71,6 +77,7 @@ class City(RequestData):
     URL_TEMPLATE = (
         'https://geocoding-api.open-meteo.com/v1/search?name={name}&country={country}')
 
+    @exceptlogger()
     def __init__(self, name=None, latitude=None, longitude=None):
 
         if name is not None:
@@ -85,6 +92,7 @@ class City(RequestData):
         self.latitude = latitude
         self.longitude = longitude
 
+    @exceptlogger()
     def request(self):
         cities = self.find_cities()
 
@@ -94,6 +102,7 @@ class City(RequestData):
         for k, v in cities[self.name].items():
             setattr(self, k, v)
 
+    @exceptlogger()
     def find_cities(self):
         data = super().request(name=self.name, country=self.country)
         data = data.get('results', {})
@@ -107,6 +116,7 @@ class Weather(RequestData):
     URL_TEMPLATE = ('https://api.open-meteo.com/v1/forecast?'
                     'latitude={lat}&longitude={lon}&current_weather=true')
 
+    @exceptlogger()
     def __init__(self, city=None, latitude=None, longitude=None):
 
         if isinstance(city, str):
@@ -128,10 +138,12 @@ class Weather(RequestData):
         self.lon = longitude
         self.data = None
 
+    @exceptlogger()
     def __repr__(self):
         n = type(self).__name__
         return f'{n}(latitude={self.lat}, longitude={self.lon})'
 
+    @exceptlogger()
     def request(self):
         data = super().request(lat=self.lat, lon=self.lon)
         self.data = data
@@ -139,40 +151,45 @@ class Weather(RequestData):
     @property
     def temperature(self):
         """Retreive temperature from OpenMeteo response."""
-        if self.data is None:
-            self.request()
-        return self.data['current_weather']['temperature']
+        with exceptlogger('Weather.temperature'):
+            if self.data is None:
+                self.request()
+            return self.data['current_weather']['temperature']
 
     @property
     def weather(self):
         """Retreive weather description from OpenMeteo response."""
-        if self.data is None:
-            self.request()
-        code = self.data['current_weather']['weathercode']
-        if code >= len(WMO_CODES):
-            return "unknown"
-        return WMO_CODES[code]
+        with exceptlogger('Weather.weather'):
+            if self.data is None:
+                self.request()
+            code = self.data['current_weather']['weathercode']
+            if code >= len(WMO_CODES):
+                return "unknown"
+            return WMO_CODES[code]
 
     @property
     def windspeed(self):
         """Retreive windspeed from OpenMeteo response."""
-        if self.data is None:
-            self.request()
-        return self.data['current_weather']['windspeed']
+        with exceptlogger('Weather.windspeed'):
+            if self.data is None:
+                self.request()
+            return self.data['current_weather']['windspeed']
 
     @property
     def winddirection(self):
         """Retreive winddirection from OpenMeteo response."""
-        if self.data is None:
-            self.request()
-        return self.data['current_weather']['winddirection']
+        with exceptlogger('Weather.winddirection'):
+            if self.data is None:
+                self.request()
+            return self.data['current_weather']['winddirection']
 
     @property
     def time(self):
         """Retreive time from OpenMeteo response."""
-        if self.data is None:
-            self.request()
-        return self.data['current_weather']['time']
+        with exceptlogger('Weather.time'):
+            if self.data is None:
+                self.request()
+            return self.data['current_weather']['time']
 
 if __name__ == '__main__':
 
